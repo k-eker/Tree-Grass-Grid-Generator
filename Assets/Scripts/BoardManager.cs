@@ -1,16 +1,20 @@
 using System;
+using System.Diagnostics;
 using UnityEngine;
+using Debug = UnityEngine.Debug;
 using Random = UnityEngine.Random;
 
 namespace Supersonic{
     public class BoardManager : MonoBehaviour{
         [SerializeField] private int boardWidth = 6;
         [SerializeField] private int boardHeight = 8;
-        [SerializeField] private int maxRepetition = 2;
 
-        [SerializeField] private VisualBoard visualBoard;
+        private VisualBoard visualBoard;
+
+        private const int MAX_REPETITION = 2;
 
         private void Start(){
+            visualBoard = FindObjectOfType<VisualBoard>();
             Generate();
         }
 #if UNITY_EDITOR
@@ -22,8 +26,14 @@ namespace Supersonic{
 #endif
 
         private void Generate(){
+            var stopwatch = new Stopwatch();
+ 
+            stopwatch.Start();
             var newBoard = GenerateBoardData(boardWidth, boardHeight);
             visualBoard.SpawnBoard(newBoard);
+            stopwatch.Stop();
+
+            Debug.Log("Board generated. Elapsed time : " + stopwatch.ElapsedMilliseconds + " ms");
         }
 
         private BoardData GenerateBoardData(int width, int height){
@@ -35,73 +45,70 @@ namespace Supersonic{
                 Data = new CellData[width, height]
             };
 
-            for (int x = 0; x < width; x++){
-                for (int y = 0; y < height; y++){
-                    var rowCountValid = EnsureHorizontalCount(x, y, board.Data, out CellOccupant suggestedOccupantH);
-                    var columnCountValid = EnsureVerticalCount(x, y, board.Data, out CellOccupant suggestedOccupantV);
-                    
-                    var repetitionFoundHorizontal = EnsureHorizontalRepetition(x, y, board.Data, out CellOccupant suggestedHorizontal);
-                    var repetitionFoundVertical = EnsureVerticalRepetition(x, y, board.Data, out CellOccupant suggestedVertical);
-                    if (repetitionFoundHorizontal && repetitionFoundVertical && suggestedHorizontal != suggestedVertical){
-                        x = 0;
-                        continue;
-                    }
-                    
-                    
-                    if (repetitionFoundHorizontal){
-                        board.Data[x, y] = new CellData(x, y, suggestedHorizontal);
-                    }
-                    else if (repetitionFoundVertical){
-                        board.Data[x, y] = new CellData(x, y, suggestedVertical);
-                    }
-                    else if (rowCountValid){
-                        board.Data[x, y] = new CellData(x, y, suggestedOccupantH);
-                    }
-                    else if (columnCountValid){
-                        board.Data[x, y] = new CellData(x, y, suggestedOccupantV);
-                    }
-                    else{
-                        var occupant = Random.value < 0.5f ? CellOccupant.Grass : CellOccupant.Tree;
+            do{
+                for (int x = 0; x < width; x++){
+                    for (int y = 0; y < height; y++){
+                        var occupant = PickCellOccupant(x, y, board.Data);
                         board.Data[x, y] = new CellData(x, y, occupant);
                     }
                 }
-                
-            }
-
-            EnsureReplaced(board.Data);
+            } 
+            while (!EnsureValidBoard(board.Data));
             
             return board;
         }
 
-        private void EnsureReplaced(CellData[,] boardData){
+        private CellOccupant PickCellOccupant(int x, int y, CellData[,] boardData){
+            
+            if (CheckForHorizontalRepetition(x, y, boardData, out CellOccupant suggestedHorizontal)){
+                return suggestedHorizontal;
+            }
+            if (CheckForVerticalRepetition(x, y, boardData, out CellOccupant suggestedVertical)){
+                return suggestedVertical;
+            }
+            if (EnsureHorizontalCount(x, y, boardData, out CellOccupant suggestedOccupantH)){
+                return suggestedOccupantH;
+            }
+            if (EnsureVerticalCount(x, y, boardData, out CellOccupant suggestedOccupantV)){
+                return suggestedOccupantV;
+            }
+            
+            return Random.value < 0.5f ? CellOccupant.Grass : CellOccupant.Tree;
+        }
+
+        private bool EnsureValidBoard(CellData[,] boardData){
             for (int x = 0; x < boardWidth; x++){
                 var columnTreeCount = GetColumnTreeCount(x, boardData);
                 if (columnTreeCount != boardHeight / 2){
-                    Debug.Log("COLUMN COUNT : " + x + " : " +  columnTreeCount);
+                    return false;
                 }
+
                 for (int y = 0; y < boardHeight; y++){
                     var rowTreeCount = GetRowTreeCount(y, boardData);
                     if (rowTreeCount != boardWidth / 2){
-                        Debug.Log("ROW COUNT : " + y + " : " + rowTreeCount);
+                        return false;
                     }
                 }
             }
+
+            return true;
         }
 
         private int GetRowTreeCount(int y, CellData[,] boardData){
             var count = 0;
             for (int i = 0; i < boardWidth; i++){
-                if (boardData[i,y].Occupant == CellOccupant.Tree){
+                if (boardData[i, y].Occupant == CellOccupant.Tree){
                     count++;
                 }
             }
 
             return count;
         }
+
         private int GetColumnTreeCount(int x, CellData[,] boardData){
             var count = 0;
             for (int i = 0; i < boardHeight; i++){
-                if (boardData[x,i].Occupant == CellOccupant.Tree){
+                if (boardData[x, i].Occupant == CellOccupant.Tree){
                     count++;
                 }
             }
@@ -109,17 +116,18 @@ namespace Supersonic{
             return count;
         }
 
-        private bool EnsureHorizontalRepetition(int x, int y, CellData[,] boardData, out CellOccupant suggestedOccupant){
+        private bool CheckForHorizontalRepetition(int x, int y, CellData[,] boardData,
+            out CellOccupant suggestedOccupant){
             suggestedOccupant = CellOccupant.None;
 
-            if (x < maxRepetition){
+            if (x < MAX_REPETITION){
                 return false;
             }
 
             var prevOccupant = CellOccupant.None;
             var repetitionFound = true;
 
-            for (int i = x - 1; i > x - maxRepetition - 1; i--){
+            for (int i = x - 1; i > x - MAX_REPETITION - 1; i--){
                 var cell = boardData[i, y];
                 if (prevOccupant != CellOccupant.None && cell.Occupant != prevOccupant){
                     repetitionFound = false;
@@ -135,18 +143,18 @@ namespace Supersonic{
 
             return false;
         }
-        
-        private bool EnsureVerticalRepetition(int x, int y, CellData[,] boardData, out CellOccupant suggestedOccupant){
+
+        private bool CheckForVerticalRepetition(int x, int y, CellData[,] boardData, out CellOccupant suggestedOccupant){
             suggestedOccupant = CellOccupant.None;
-            
-            if (y < maxRepetition){
+
+            if (y < MAX_REPETITION){
                 return false;
             }
 
             var prevOccupant = CellOccupant.None;
             var repetitionFound = true;
 
-            for (int i = y - 1; i > y - maxRepetition - 1; i--){
+            for (int i = y - 1; i > y - MAX_REPETITION - 1; i--){
                 var cell = boardData[x, i];
                 if (prevOccupant != CellOccupant.None && cell.Occupant != prevOccupant){
                     repetitionFound = false;
@@ -165,8 +173,8 @@ namespace Supersonic{
 
         private bool EnsureHorizontalCount(int x, int y, CellData[,] boardData, out CellOccupant suggestedOccupant){
             suggestedOccupant = CellOccupant.None;
-            
-            var xBudget = boardWidth / 2;
+
+            var allowedCount = boardWidth / 2;
             var treeCount = 0;
             var grassCount = 0;
             for (int i = 0; i < x; i++){
@@ -178,24 +186,24 @@ namespace Supersonic{
                     grassCount++;
                 }
             }
-            
-            if (treeCount >= xBudget){
+
+            if (treeCount >= allowedCount){
                 suggestedOccupant = CellOccupant.Grass;
                 return true;
             }
-            
-            if (grassCount >= xBudget){
+
+            if (grassCount >= allowedCount){
                 suggestedOccupant = CellOccupant.Tree;
                 return true;
             }
 
             return false;
         }
-        
+
         private bool EnsureVerticalCount(int x, int y, CellData[,] boardData, out CellOccupant suggestedOccupant){
             suggestedOccupant = CellOccupant.None;
-            
-            var yBudget = boardHeight / 2;
+
+            var allowedCount = boardHeight / 2;
             var treeCount = 0;
             var grassCount = 0;
             for (int i = 0; i < y; i++){
@@ -207,13 +215,13 @@ namespace Supersonic{
                     grassCount++;
                 }
             }
-            
-            if (treeCount >= yBudget){
+
+            if (treeCount >= allowedCount){
                 suggestedOccupant = CellOccupant.Grass;
                 return true;
             }
-            
-            if (grassCount >= yBudget){
+
+            if (grassCount >= allowedCount){
                 suggestedOccupant = CellOccupant.Tree;
                 return true;
             }
