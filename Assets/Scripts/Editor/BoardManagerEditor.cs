@@ -1,9 +1,8 @@
 using UnityEditor;
 using UnityEngine;
 
-namespace Supersonic{
+namespace GridGeneration{
     [CustomEditor(typeof(BoardManager))]
-    [CanEditMultipleObjects]
     public class BoardManagerEditor : Editor{
         SerializedProperty boardWidth;
         SerializedProperty boardHeight;
@@ -17,10 +16,10 @@ namespace Supersonic{
 
         public override void OnInspectorGUI(){
             serializedObject.Update();
-            EditorGUILayout.BeginVertical();
             DrawWidthRow();
             DrawHeightRow();
-            EditorGUILayout.EndVertical();
+            EditorGUILayout.Space();
+            EditorGUILayout.HelpBox("Press R to generate a new board", MessageType.Info);
             serializedObject.ApplyModifiedProperties();
         }
 

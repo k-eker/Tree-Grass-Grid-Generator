@@ -1,5 +1,5 @@
 
-namespace Supersonic{
+namespace GridGeneration{
 
     public enum CellOccupant{
         None,

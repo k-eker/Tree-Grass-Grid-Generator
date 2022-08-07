@@ -1,5 +1,5 @@
 
-namespace Supersonic{
+namespace GridGeneration{
     public struct CellData{
         public int X{ get; }
         public int Y{ get; }

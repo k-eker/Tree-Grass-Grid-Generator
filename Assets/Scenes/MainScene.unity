@@ -159,7 +159,7 @@ Camera:
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
-  m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
+  m_BackGroundColor: {r: 0.15294118, g: 0.14509805, b: 0.1254902, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -263,6 +263,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1849359815}
   - component: {fileID: 1849359814}
+  - component: {fileID: 1849359816}
   m_Layer: 0
   m_Name: BoardManager
   m_TagString: Untagged
@@ -299,3 +300,17 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1849359816
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1849359813}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c87469f4cdbc74a0f9110484c518698c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  grassPrefab: {fileID: 2099093580249925941, guid: 51721816c4a8147279a46f9ff8c80f19, type: 3}
+  treePrefab: {fileID: 8193793394046279048, guid: 0271b41bc627745b3bce845d2929ab40, type: 3}

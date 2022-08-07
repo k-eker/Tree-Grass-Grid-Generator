@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Supersonic{
+namespace GridGeneration{
     public class VisualBoard : MonoBehaviour{
         [SerializeField] private GameObject grassPrefab;
         [SerializeField] private GameObject treePrefab;

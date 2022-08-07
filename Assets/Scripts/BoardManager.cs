@@ -4,7 +4,8 @@ using UnityEngine;
 using Debug = UnityEngine.Debug;
 using Random = UnityEngine.Random;
 
-namespace Supersonic{
+namespace GridGeneration{
+    [RequireComponent(typeof(VisualBoard))]
     public class BoardManager : MonoBehaviour{
         [SerializeField] private int boardWidth = 6;
         [SerializeField] private int boardHeight = 8;
@@ -14,9 +15,10 @@ namespace Supersonic{
         private const int MAX_REPETITION = 2;
 
         private void Start(){
-            visualBoard = FindObjectOfType<VisualBoard>();
+            visualBoard = GetComponent<VisualBoard>();
             Generate();
         }
+        
 #if UNITY_EDITOR
         private void Update(){
             if (Input.GetKeyDown(KeyCode.R)){
